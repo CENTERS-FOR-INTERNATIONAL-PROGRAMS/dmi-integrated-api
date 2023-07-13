@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const tests_1 = require("../controllers/tests");
+const router = (0, express_1.Router)();
+router.get('/', tests_1.getTests);
+router.get('/:id', tests_1.getTest);
+router.post('/', tests_1.createTest);
+router.put('/:id', tests_1.updateTest);
+router.delete('/:id', tests_1.deleteTest);
+exports.default = router;
