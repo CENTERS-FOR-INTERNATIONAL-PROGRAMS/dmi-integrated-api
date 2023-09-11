@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
     "dev": "node ./build/server.js",
-    "start": "tsc && npm run dev"
+    "start": "tsc && copy && npm run dev",
+    "copy": "node -e \"const fs = require('fs'); fs.cp('./src/data', './build/src/data', {recursive: true}, (err) => { });\""
   },
   "keywords": [
     "node",
