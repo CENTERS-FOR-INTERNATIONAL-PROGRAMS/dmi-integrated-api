@@ -31,6 +31,15 @@ class MainRepository implements IMainRepository {
             // A.FacilityID
             route_filter_query += ` A.FacilityID = '` + filterInstance.filter_facility + `' `;
         }
+        
+        if (filterInstance.filter_case_definition != "-1") {
+            if (route_filter_query != ``) {
+                route_filter_query += ' AND '
+            }
+
+            // WHERE C.CaseDef = 'ILI'
+            route_filter_query += ` C.CaseDef = '` + filterInstance.filter_case_definition + `' `;
+        }
 
         if ((filterInstance.filter_date_range_start != "-1") && (filterInstance.filter_date_range_end != "-1")) {
             if (route_filter_query != ``) {
@@ -53,11 +62,11 @@ class MainRepository implements IMainRepository {
         // TODO! Test and confirm EpiWeek Filter
         if ((filterInstance.filter_epi_week_start != "-1") && (filterInstance.filter_epi_week_end != "-1")) {
             if (route_filter_query != ``) {
-                // route_filter_query += ' AND '
+                route_filter_query += ' AND '
             }
 
             // A.EpiWeek
-            // route_filter_query += ` (A.EpiWeek BETWEEN ` + filterInstance.filter_epi_week_start + ` AND ` + filterInstance.filter_epi_week_end + `) `;
+            route_filter_query += ` (E.WeekNumber BETWEEN ` + filterInstance.filter_epi_week_start + ` AND ` + filterInstance.filter_epi_week_end + `) `;
         }
 
         if (route_filter_query != ``) {
@@ -97,10 +106,6 @@ class MainRepository implements IMainRepository {
     async executeQuery(RouteInstance: IDRoute, filter_query: string): Promise<any[]> {
         if (RouteInstance.query != "") {
             RouteInstance.query = RouteInstance.query.replace("--{{WHERE}}--", filter_query);
-
-            console.log("************************************");
-            console.log(RouteInstance.query);
-            console.log("************************************");
 
             this.retrievedData = await this.db.sequelize?.query<any[]>(RouteInstance.query, {
                 type: QueryTypes.SELECT,

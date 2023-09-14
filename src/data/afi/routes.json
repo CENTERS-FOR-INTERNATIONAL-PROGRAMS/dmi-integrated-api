@@ -3,146 +3,122 @@
         {
             "title": "AFI cascade",
             "url": "/overview/AFICascade",
-            "query": "SELECT ScreenedNumber, EligibleNumber, EnrolledNumber, SampledNumber, ((EligibleNumber) * 100/( ScreenedNumber)) EligiblePercentage, ((EnrolledNumber) * 100/( EligibleNumber)) EnrolledPercentage, ((SampledNumber) * 100/( EnrolledNumber)) SampledPercentage FROM ( SELECT COUNT(PID) ScreenedNumber, (SELECT Count(PId) FROM [dbo].[FactScreening] WHERE Eligible = 1 )EligibleNumber, ( SELECT Count(PID) FROM [dbo].[FactEnrollAndHouseholdInfo]) EnrolledNumber, (SELECT Count(DISTINCT(PID)) FROM [dbo].[FactSampleCollection] WHERE Barcode != '0' and PID !='') SampledNumber FROM [dbo].[FactScreening] ) A",
-            "filter": false
+            "file": "overview.AFICascade.sql"
         },
         {
             "title": "AFI Enrolled by gender",
             "url": "/overview/enrolledByGender",
-            "query": "SELECT TotalEnrolledNumber, MaleEnrolledNumber , FemaleEnrolledNumber , CAST(round(((MaleEnrolledNumber*100.0)/TotalEnrolledNumber),2) as decimal(5,2))MaleEnrolledPercentage, CAST(round(((FemaleEnrolledNumber*100.0)/TotalEnrolledNumber),2) as decimal(5,2))FemaleEnrolledPercentage FROM ( SELECT COUNT(PID) TotalEnrolledNumber, COUNT(CASE WHEN Gender = '1.0' then Gender end ) MaleEnrolledNumber, COUNT(CASE WHEN Gender = '2.0' then Gender end ) FemaleEnrolledNumber FROM FactEnrollAndHouseholdInfo ) A",
-            "filter": false
+            "file": "overview.enrolledByGender.sql"
         },
         {
             "title": "AFI enrolled by age group and gender",
             "url": "/overview/enrolledByAgeGender",
-            "query": "SELECT AgeGroup, Gender, COUNT(PID) EnrolledNumber FROM( SELECT Pid, CASE Gender when '1.0' THEN 'Male' When '2.0' THEN 'Female' END Gender , CASE WHEN CAST(Ageyrs AS decimal) BETWEEN 0 and 4 THEN '0-4Yrs' WHEN CAST(Ageyrs AS decimal) BETWEEN 5 and 14 THEN '5-14Yrs' WHEN CAST(Ageyrs AS decimal) BETWEEN 15 and 34 THEN '15-34Yrs' WHEN CAST(Ageyrs AS decimal) BETWEEN 35 and 64 THEN '35-64Yrs' WHEN CAST(Ageyrs AS decimal) BETWEEN 65 and 84 THEN '65-84Yrs' WHEN CAST(Ageyrs AS decimal) BETWEEN 85 and 105 THEN '85+' END AgeGroup FROM FactEnrollAndHouseholdInfo WHERE Gender = '1.0' OR Gender ='2.0' ) A Where AgeGroup is not null Group by AgeGroup, Gender",
-            "filter": false
+            "file": "overview.enrolledByAgeGender.sql"
         },
         {
             "title": "Syndromes over time",
             "url": "/overview/syndromesOverTime",
-            "query": "SELECT sum(MERSCov) MERSCovNumber, Sum(SARI) SARINumber, sum((UF + UF2)) as UFNumber ,SUM(DF) DFNumber, SUM(CASE WHEN MERSCov = 0 AND SARI= 0 and UF = 0 and UF2 =0 and DF = 0 then 1 else 0 END) as [NonUFSARIDFMERSCVONumber], WeekNumber FROM ( SELECT (SELECT WeekNumber From [dbo].[DimEpiweek] Where C.InterviewDate BETWEEN StartDAte and EndDate) AS WeekNumber, CASE WHEN A.[merscov_status] = '1.0' THEN 1 ELSE 0 End MERSCov, CASE WHEN A.sariStatus = '1.0' AND A.merscov_status <> '1.0' THEN 1 ELSE 0 END SARI, CASE WHEN B.Cough = '1.0' AND CAST(B.Coughdays AS decimal) > 10 and CAST(Coughdays AS decimal) < =14 THEN 1 ELSE 0 END UF, CASE WHEN A.sariStatus <> '1.0' AND A.Fevercriteria = '1.0' AND B.Diarrhea = '1.0' AND (B.Loosestools <> '1.0' or B.Diarrhea <> '1.0') THEN 1 ELSE 0 END UF2, CASE WHEN A.sariStatus <> '1.0' AND B.Diarrhea ='1.0' AND B.Loosestools = '1.0' THEN 1 ELSE 0 END DF FROM [dbo].[FactPhysicalAbstraction] A INNER JOIN [dbo].[FactHistoryPhyExam] B ON A.PID = B.PID INNER JOIN [dbo].[FactEnrollAndHouseholdInfo] C ON A.PID = C.PID ) A WHERE WeekNumber is not null GROUP BY WeekNumber ORDER BY WeekNumber",
-            "filter": false
+            "file": "overview.syndromesOverTime.sql"
         },
         {
             "title": "RDT Results (Malaria)",
             "url": "/overview/RTDResultsMalaria",
-            "query": "SELECT D.NegativeNumber, D.PositiveNumber, D.TotalNumber, CAST(round(((D.NegativeNumber*100.0)/D.TotalNumber),2) as decimal(5,2))NegativePercentage, CAST(round(((D.PositiveNumber*100.0)/D.TotalNumber),2) as decimal(5,2))PositivePercentage FROM ( SELECT COUNT( CASE WHEN B.ResultValue = 2 THEN B.ResultValue END) NegativeNumber, COUNT(CASE WHEN B.ResultValue = 1 THEN B.ResultValue END) PositiveNumber, COUNT(CASE WHEN B.ResultValue = 1 Or B.ResultValue =2 THEN B.ResultValue END) TotalNumber FROM [dbo].[FactMalariRdt] A INNER JOIN [dbo].[FactLabResult] B ON A.Barcode = B.Barcode Where ResultValue IS NOT NULL ) D",
-            "filter": false
+            "file": "overview.RTDResultsMalaria.sql"
         },
         {
             "title": "RDT Results (Leptospirosis)",
             "url": "/overview/RTDResultsLeptospirosis",
-            "query": "SELECT D.NegativeNumber, D.PositiveNumber, D.TotalNumber, CAST(round(((D.NegativeNumber*100.0)/D.TotalNumber),2) as decimal(5,2))NegativePercentage, CAST(round(((D.PositiveNumber*100.0)/D.TotalNumber),2) as decimal(5,2))PositivePercentage FROM ( SELECT COUNT( CASE WHEN B.ResultValue = 2 THEN B.ResultValue END) NegativeNumber, COUNT(CASE WHEN B.ResultValue = 1 THEN B.ResultValue END) PositiveNumber, COUNT(CASE WHEN B.ResultValue = 1 Or B.ResultValue =2 THEN B.ResultValue END) TotalNumber FROM [dbo].[FactLeptospirosisRdt] A INNER JOIN [dbo].[FactLabResult] B ON A.Barcode = B.Barcode Where ResultValue IS NOT NULL ) D",
-            "filter": false
+            "file": "overview.RTDResultsLeptospirosis.sql"
         },
         {
             "title": "Molecular PCR Laboratory Results",
             "url": "/overview/PCRResults",
-            "query": "SELECT Sum(CASE WHEN Result = 'NEG' Then 1 Else 0 End) NegativeNumber, Sum(CASE WHEN Target ='Plasmodium' then 1 Else 0 End ) PlasmodiumNumber, Sum(CASE WHEN Target ='HIV-1' then 1 Else 0 End ) HIV1Number, Sum(CASE WHEN Target ='Salmonella' then 1 Else 0 End ) SalmonellaNumber, Sum(CASE WHEN Target ='Rickettsia' then 1 Else 0 End ) RickettsiaNumber, Sum(CASE WHEN Target ='Dengue' then 1 Else 0 End ) DengueNumber, Sum(CASE WHEN Target ='Brucella' then 1 Else 0 End ) BrucellaNumber, Sum(CASE WHEN Target ='S. pneumoniae' then 1 Else 0 End ) SPneumoniaeNumber, Sum(CASE WHEN Target ='Chikungunya' then 1 Else 0 End ) ChikungunyaNumber, Sum(CASE WHEN Target ='Leishmania' then 1 Else 0 End )LeishmaniaNumber, Sum(CASE WHEN Target ='Bartonella' then 1 Else 0 End ) BartonellaNumber, Sum(CASE WHEN Target ='Leptospira' then 1 Else 0 End ) LeptospiraNumber, Sum(CASE WHEN Target ='C. burnetii' then 1 Else 0 End ) CburnetiiNumber, Sum(CASE WHEN Target ='Rift Valley Fever' then 1 Else 0 End ) RiftValleyFeverNumber, Sum(CASE WHEN Target ='B. pseudomallei' then 1 Else 0 End ) BPseudomalleiNumber FROM [dbo].[kemri_tac_results]",
-            "filter": false
+            "file": "overview.PCRResults.sql"
         },
         {
             "title": "Priority IDSR immediately reportable Diseases/Microbes",
             "url": "/overview/priorityIDSRReportableDiseases",
-            "query": "SELECT A.DengueNumber, A.RiftValleyFeverNumber, A.TotalDengueAndRiftValleyFeverNumber, CAST(round((( A.DengueNumber*100.0)/A.TotalDengueAndRiftValleyFeverNumber),2) as decimal(5,2))DenguePercentage, CAST(round((( A.RiftValleyFeverNumber*100.0)/A.TotalDengueAndRiftValleyFeverNumber),2) as decimal(5,2))RiftValleyFeverPercentage FROM ( SELECT Sum(CASE WHEN Target ='Dengue' then 1 Else 0 End ) DengueNumber, Sum(CASE WHEN Target ='Rift Valley Fever' then 1 Else 0 End ) RiftValleyFeverNumber, Sum(CASE WHEN Target ='Rift Valley Fever' or Target ='Dengue' then 1 Else 0 End ) TotalDengueAndRiftValleyFeverNumber FROM [dbo].[kemri_tac_results] ) A",
-            "filter": false
+            "file": "overview.priorityIDSRReportableDiseases.sql"
         },
         {
             "title": "Mongthly IDSR reportable Diseases/Microbes",
             "url": "/overview/monthlyIDSRReportableDiseases",
-            "query": "SELECT A.HIV1Number, A.PlasmodiumNumber, A.SPneumonieNumber, A.LeishmaniaNumber, A.TotalNumber, CAST(round((( A.HIV1Number*100.0)/A.TotalNumber),2) as decimal(5,2))HIV1Percentage, CAST(round((( A.PlasmodiumNumber*100.0)/A.TotalNumber),2) as decimal(5,2))PlasmodiumPercentage, CAST(round((( A.SPneumonieNumber*100.0)/A.TotalNumber),2) as decimal(5,2))SPneumoniePercentage, CAST(round((( A.LeishmaniaNumber*100.0)/A.TotalNumber),2) as decimal(5,2))LeishmaniaPercentage FROM ( SELECT Sum(CASE WHEN Target ='HIV-1' then 1 Else 0 End ) HIV1Number, Sum(CASE WHEN Target ='Plasmodium' then 1 Else 0 End ) PlasmodiumNumber, Sum(CASE WHEN Target ='S. pneumoniae' then 1 Else 0 End ) SPneumonieNumber, Sum(CASE WHEN Target ='Leishmania' then 1 Else 0 End )LeishmaniaNumber, Sum(CASE WHEN Target ='HIV-1' or Target ='Plasmodium' or Target ='S. pneumoniae' or Target ='Leishmania' then 1 Else 0 End ) TotalNumber FROM [dbo].[kemri_tac_results] ) A",
-            "filter": false
+            "file": "overview.monthlyIDSRReportableDiseases.sql"
         },
         {
             "title": "Syndromes",
             "url": "/syndromic_cases/syndromes",
-            "query": "SELECT A.MERSCovNumber, A.SARINumber, (A.UF + A.UF2) AS UFNumber, DFNumber, (A.MERSCovNumber + A.SARINumber + A.UF + A.UF2 + A.DFNumber) TotalNumber, CAST(round(((A.MERSCovNumber*100.0)/(A.MERSCovNumber + A.SARINumber + A.UF + A.UF2 + A.DFNumber)),2) as decimal(5,2))MERSCovPercentage, CAST(round((( A.SARINumber*100.0)/(A.MERSCovNumber + A.SARINumber + A.UF + A.UF2 + A.DFNumber)),2) as decimal(5,2))SARIPercentage, CAST(round((( (A.UF + A.UF2)*100.0)/(A.MERSCovNumber + A.SARINumber + A.UF + A.UF2 + A.DFNumber)),2) as decimal(5,2))UFPercentage, CAST(round((( DFNumber*100.0)/(A.MERSCovNumber + A.SARINumber + A.UF + A.UF2 + A.DFNumber)),2) as decimal(5,2))DFPercentage FROM ( SELECT SUM(CASE WHEN A.[merscov_status] = '1.0' THEN 1 ELSE 0 End ) as MERSCovNumber, SUM(CASE WHEN A.sariStatus = '1.0' AND A.merscov_status <> '1.0' THEN 1 ELSE 0 END) SARINumber, SUM(CASE WHEN B.Cough = '1.0' AND CAST(B.Coughdays AS decimal) > 10 and CAST(Coughdays AS decimal) < =14 THEN 1 ELSE 0 END) UF, SUM(CASE WHEN A.sariStatus <> '1.0' AND A.Fevercriteria = '1.0' AND B.Diarrhea = '1.0' AND (B.Loosestools <> '1.0' or B.Diarrhea <> '1.0') THEN 1 ELSE 0 END) UF2, SUM(CASE WHEN A.sariStatus <> '1.0' AND B.Diarrhea ='1.0' AND B.Loosestools = '1.0' THEN 1 ELSE 0 END) DFNumber FROM [dbo].[FactPhysicalAbstraction] A INNER JOIN [dbo].[FactHistoryPhyExam] B ON A.PID = B.PID INNER JOIN [dbo].[FactEnrollAndHouseholdInfo] C ON A.PID = C.PID ) A",
-            "filter": false
+            "file": "syndromic_cases.syndromes.sql"
         },
         {
             "title": "Syndromes by facility",
             "url": "/syndromic_cases/syndromesByFacility",
-            "query": "SELECT A.HealthFacility, A.MERSCovNumber, A.SARINumber, (A.UF + A.UF2) AS UFNumber, DFNumber, (A.MERSCovNumber + A.SARINumber + A.UF + A.UF2 + A.DFNumber) TotalNumber, CAST(round(((A.MERSCovNumber*100.0)/(A.MERSCovNumber + A.SARINumber + A.UF + A.UF2 + A.DFNumber)),2) as decimal(5,2))MERSCovPercentage, CAST(round((( A.SARINumber*100.0)/(A.MERSCovNumber + A.SARINumber + A.UF + A.UF2 + A.DFNumber)),2) as decimal(5,2))SARIPercentage, CAST(round((( (A.UF + A.UF2)*100.0)/(A.MERSCovNumber + A.SARINumber + A.UF + A.UF2 + A.DFNumber)),2) as decimal(5,2))UFPercentage, CAST(round((( DFNumber*100.0)/(A.MERSCovNumber + A.SARINumber + A.UF + A.UF2 + A.DFNumber)),2) as decimal(5,2))DFPercentage FROM ( SELECT (SELECT ShortName FROM [dbo].[DimFacilities] Where StudySiteID = D.StudySite ) HealthFacility, SUM(CASE WHEN A.[merscov_status] = '1.0' THEN 1 ELSE 0 End ) as MERSCovNumber, SUM(CASE WHEN A.sariStatus = '1.0' AND A.merscov_status <> '1.0' THEN 1 ELSE 0 END) SARINumber, SUM(CASE WHEN B.Cough = '1.0' AND CAST(B.Coughdays AS decimal) > 10 and CAST(Coughdays AS decimal) < =14 THEN 1 ELSE 0 END) UF, SUM(CASE WHEN A.sariStatus <> '1.0' AND A.Fevercriteria = '1.0' AND B.Diarrhea = '1.0' AND (B.Loosestools <> '1.0' or B.Diarrhea <> '1.0') THEN 1 ELSE 0 END) UF2, SUM(CASE WHEN A.sariStatus <> '1.0' AND B.Diarrhea ='1.0' AND B.Loosestools = '1.0' THEN 1 ELSE 0 END) DFNumber FROM [dbo].[FactPhysicalAbstraction] A INNER JOIN [dbo].[FactHistoryPhyExam] B ON A.PID = B.PID INNER JOIN [dbo].[FactEnrollAndHouseholdInfo] C ON A.PID = C.PID INNER JOIN [dbo].[FactScreening] D ON A.PID = D.StudyID Group by StudySite ) A",
-            "filter": false
+            "file": "syndromic_cases.syndromesByFacility.sql"
         },
         {
             "title": "Malaria Results",
             "url": "/results_rdt/malariaResults",
-            "query": "SELECT D.NegativeNumber, D.PositiveNumber, D.TotalNumber, CAST(round(((D.NegativeNumber*100.0)/D.TotalNumber),2) as decimal(5,2))NegativePercentage, CAST(round(((D.PositiveNumber*100.0)/D.TotalNumber),2) as decimal(5,2))PositivePercentage FROM ( SELECT COUNT( CASE WHEN B.ResultValue = 2 THEN B.ResultValue END) NegativeNumber, COUNT(CASE WHEN B.ResultValue = 1 THEN B.ResultValue END) PositiveNumber, COUNT(CASE WHEN B.ResultValue = 1 Or B.ResultValue =2 THEN B.ResultValue END) TotalNumber FROM [dbo].[FactMalariRdt] A INNER JOIN [dbo].[FactLabResult] B ON A.Barcode = B.Barcode Where ResultValue IS NOT NULL ) D",
-            "filter": false
+            "file": "results_rdt.malariaResults.sql"
         },
         {
             "title": "Leptospirosis Results",
             "url": "/results_rdt/leptospirosisResults",
-            "query": "SELECT D.NegativeNumber, D.PositiveNumber, D.TotalNumber, CAST(round(((D.NegativeNumber*100.0)/D.TotalNumber),2) as decimal(5,2))NegativePercentage, CAST(round(((D.PositiveNumber*100.0)/D.TotalNumber),2) as decimal(5,2))PositivePercentage FROM ( SELECT COUNT( CASE WHEN B.ResultValue = 2 THEN B.ResultValue END) NegativeNumber, COUNT(CASE WHEN B.ResultValue = 1 THEN B.ResultValue END) PositiveNumber, COUNT(CASE WHEN B.ResultValue = 1 Or B.ResultValue =2 THEN B.ResultValue END) TotalNumber FROM [dbo].[FactLeptospirosisRdt] A INNER JOIN [dbo].[FactLabResult] B ON A.Barcode = B.Barcode Where ResultValue IS NOT NULL ) D",
-            "filter": false
+            "file": "results_rdt.leptospirosisResults.sql"
         },
         {
             "title": "Malaria Positive Results",
             "url": "/results_rdt/malariaPositiveResults",
-            "query": "SELECT D.PFalciparumNumber, D.PanMalariaNumber, D.MixedInfectionNumber, D.UnspeciatedNumber, D.TotalNumber, CAST(round(((D.PFalciparumNumber*100.0)/D.TotalNumber),2) as decimal(5,2))PFalciparumPercentage, CAST(round(((D.PanMalariaNumber*100.0)/D.TotalNumber),2) as decimal(5,2))PanMalariaPercentage, CAST(round(((D.MixedInfectionNumber*100.0)/D.TotalNumber),2) as decimal(5,2))MixedInfectionPercentage, CAST(round(((D.UnspeciatedNumber*100.0)/D.TotalNumber),2) as decimal(5,2))UnspeciatedPercentage FROM ( SELECT SUM(CASE WHEN B.ResultValue = 1 and B.MalariaSpecies = 1 THEN 1 else 0 END) PFalciparumNumber, SUM(CASE WHEN B.ResultValue = 1 and B.MalariaSpecies = 2 THEN 1 else 0 END) PanMalariaNumber, SUM(CASE WHEN B.ResultValue = 1 and B.MalariaSpecies = 3 THEN 1 else 0 END) MixedInfectionNumber, SUM(CASE WHEN B.ResultValue = 1 and (B.MalariaSpecies = 9999 OR B.MalariaSpecies IS NULL) THEN 1 else 0 END) UnspeciatedNumber, SUM((CASE WHEN B.ResultValue = 1 and B.MalariaSpecies = 1 THEN 1 else 0 END) + (CASE WHEN B.ResultValue = 1 and B.MalariaSpecies = 2 THEN 1 else 0 END) + (CASE WHEN B.ResultValue = 1 and B.MalariaSpecies = 3 THEN 1 else 0 END) + (CASE WHEN B.ResultValue = 1 and (B.MalariaSpecies = 9999 OR B.MalariaSpecies IS NULL) THEN 1 else 0 END)) TotalNumber FROM [dbo].[FactMalariRdt] A INNER JOIN [dbo].[FactLabResult] B ON A.Barcode = B.Barcode Where ResultValue IS NOT NULL ) D",
-            "filter": false
+            "file": "results_rdt.malariaPositiveResults.sql"
         },
         {
             "title": "RDT Positive Results Distribution by Health Facility",
             "url": "/results_rdt/RDTResultsByFacility",
-            "query": "SELECT COALESCE(LeptospirosisNumber, 0) AS LeptospirosisNumber, COALESCE(MalariaNumber, 0) AS MalariaNumber, (SELECT ShortName FROM [dbo].[DimFacilities] Where StudySiteID = MalariaData.StudySite ) HealthFacility FROM ( SELECT COUNT(B.ResultValue) AS LeptospirosisNumber, D.StudySite FROM [dbo].[FactLeptospirosisRdt] C INNER JOIN [dbo].[FactLabResult] B ON C.Barcode = B.Barcode INNER JOIN [dbo].[FactScreening] D ON C.PID = D.StudyID WHERE B.ResultValue = 1 GROUP BY D.StudySite ) LeptoData FULL JOIN ( SELECT COUNT(B.ResultValue) AS MalariaNumber, D.StudySite FROM [dbo].[FactMalariRdt] C INNER JOIN [dbo].[FactLabResult] B ON C.Barcode = B.Barcode INNER JOIN [dbo].[FactScreening] D ON C.PID = D.StudyID WHERE B.ResultValue = 1 GROUP BY D.StudySite ) MalariaData ON LeptoData.StudySite = MalariaData.StudySite;",
-            "filter": false
+            "file": "results_rdt.RDTResultsByFacility.sql"
         },
         {
             "title": "RDT Malaria Positive Results over time",
             "url": "/results_rdt/malariaPositiveResultsOverTime",
-            "query": "SELECT WeekNumber, SUM(CASE WHEN PositiveNumber > 0 THEN PositiveNumber ELSE 0 END) AS PositiveNumber, SUM(SampleTestedNumber) AS SamplesTestedNumber, CAST(SUM(CASE WHEN PositiveNumber > 0 THEN PositiveNumber ELSE 0 END) AS DECIMAL) / NULLIF(SUM(SampleTestedNumber), 0) * 100 AS PositivePercentage FROM ( SELECT E.WeekNumber, CASE WHEN B.ResultValue = 2 THEN 1 ELSE 0 END AS NegativeNumber, CASE WHEN B.ResultValue = 1 THEN 1 ELSE 0 END AS PositiveNumber, CASE WHEN B.ResultValue = 1 OR B.ResultValue = 2 THEN 1 ELSE 0 END AS SampleTestedNumber FROM [dbo].[FactMalariRdt] A INNER JOIN [dbo].[FactLabResult] B ON A.Barcode = B.Barcode INNER JOIN [dbo].[FactScreening] D ON A.PID = D.StudyID INNER JOIN [dbo].[DimEpiweek] E ON D.InterviewDate BETWEEN E.StartDate AND E.EndDate WHERE B.ResultValue IS NOT NULL ) D WHERE D.WeekNumber IS NOT NULL GROUP BY WeekNumber ORDER BY WeekNumber;",
-            "filter": false
+            "file": "results_rdt.malariaPositiveResultsOverTime.sql"
         },
         {
             "title": "RDT Leptospirosis Positive Results over time",
             "url": "/results_rdt/leptospirosisPositiveResultsOverTime",
-            "query": "SELECT WeekNumber, SUM(CASE WHEN PositiveNumber > 0 THEN PositiveNumber ELSE 0 END) AS PositiveNumber, SUM(SampleTestedNumber) AS SamplesTestedNumber, CAST(SUM(CASE WHEN PositiveNumber > 0 THEN PositiveNumber ELSE 0 END) AS DECIMAL) / NULLIF(SUM(SampleTestedNumber), 0) * 100 AS PositivePercentage FROM ( SELECT E.WeekNumber, CASE WHEN B.ResultValue = 2 THEN 1 ELSE 0 END AS NegativeNumber, CASE WHEN B.ResultValue = 1 THEN 1 ELSE 0 END AS PositiveNumber, CASE WHEN B.ResultValue = 1 OR B.ResultValue = 2 THEN 1 ELSE 0 END AS SampleTestedNumber FROM [dbo].[FactLeptospirosisRdt] A INNER JOIN [dbo].[FactLabResult] B ON A.Barcode = B.Barcode INNER JOIN [dbo].[FactScreening] D ON A.PID = D.StudyID INNER JOIN [dbo].[DimEpiweek] E ON D.InterviewDate BETWEEN E.StartDate AND E.EndDate WHERE B.ResultValue IS NOT NULL ) D WHERE D.WeekNumber IS NOT NULL GROUP BY WeekNumber ORDER BY WeekNumber;",
-            "filter": false
+            "file": "results_rdt.leptospirosisPositiveResultsOverTime.sql"
         },
         {
             "title": "Enrolled with diagnosis",
             "url": "/outcome/enrolledWithDiagnosis",
-            "query": "SELECT EnrolledNumber, HaveADiagnosisNumber, CAST(round(((HaveADiagnosisNumber*100.0)/EnrolledNumber),2) as decimal(5,2))OfEnrolledHaveADocumentedPercentage FROM ( SELECT COUNT(PID) EnrolledNumber, ( SELECT Count(PID) FROM [dbo].[FactPhysicalAbstraction] WHERE Admissiondiagnosis != ' ') HaveADiagnosisNumber FROM [dbo].[FactEnrollAndHouseholdInfo] ) A",
-            "filter": false
+            "file": "outcome.enrolledWithDiagnosis.sql"
         },
         {
             "title": "Enrolled with outcome",
             "url": "/outcome/enrolledWithOutcome",
-            "query": "SELECT EnrolledNumber, HaveADiagnosisNumber, CAST(round(((HaveADiagnosisNumber*100.0)/EnrolledNumber),2) as decimal(5,2))OfEnrolledHaveOutcomePercentage FROM ( SELECT COUNT(PID) EnrolledNumber, ( SELECT Count(PID) FROM [dbo].[FactClinicalCourseOutcomes] WHERE Outcome <> '0.0 ') HaveADiagnosisNumber FROM [dbo].[FactEnrollAndHouseholdInfo] ) A",
-            "filter": false
+            "file": "outcome.enrolledWithOutcome.sql"
         },
         {
             "title": "AFI Outcome",
             "url": "/outcome/AFIOutcome",
-            "query": "SELECT COUNT(Pid) AS OutcomeNumber, COUNT(Pid) * 100.0 / SUM(COUNT(Pid)) OVER () AS OutcomePercentage, CASE WHEN Outcome = '1.0' THEN 'Discharged home in stable condition' WHEN Outcome = '2.0' THEN 'Discharged home in critical condition' WHEN Outcome = '3.0' THEN 'Discharged home against medical advice' WHEN Outcome = '4.0' THEN 'Transferred to another hospital' WHEN Outcome = '5.0' THEN 'Absconded' WHEN Outcome = '6.0' THEN 'Died' END AS OutcomeDescription FROM [dbo].[FactClinicalCourseOutcomes] WHERE Outcome != '0.0' AND Outcome != ' ' AND Outcome != '9999.0' AND Outcome != '999.99' GROUP BY Outcome",
-            "filter": false
+            "file": "outcome.AFIOutcome.sql"
         },
         {
             "title": "AFI Other Diagnosis",
             "url": "/outcome/AFIDiagnosisOther",
-            "query": "SELECT Count(pid) [Weight], Otheradmissiondiagnosis FROM ( SELECT pid, CASE WHEN Admissiondiagnosis LIKE '\"' + '%' THEN STUFF(Admissiondiagnosis, 1, 1, '') WHEN ISNUMERIC(Admissiondiagnosis) = 1 THEN NULL ELSE Admissiondiagnosis END AS AdmisionDiagnosis, CASE WHEN Otheradmissiondiagnosis LIKE '\"%' AND Otheradmissiondiagnosis LIKE '%\"' THEN SUBSTRING(Otheradmissiondiagnosis, 2, LEN(Otheradmissiondiagnosis) - 2) WHEN Otheradmissiondiagnosis LIKE '\"%' THEN RIGHT(Otheradmissiondiagnosis, LEN(Otheradmissiondiagnosis) - 1) WHEN Otheradmissiondiagnosis LIKE '%\"' THEN LEFT(Otheradmissiondiagnosis, LEN(Otheradmissiondiagnosis) - 1) ELSE Otheradmissiondiagnosis END AS Otheradmissiondiagnosis FROM [dbo].[FactPhysicalAbstraction] WHERE Otheradmissiondiagnosis != ' ' ) A WHERE AdmisionDiagnosis IS NOT NULL GROUP BY Otheradmissiondiagnosis",
-            "filter": false
+            "file": "outcome.AFIDiagnosisOther.sql"
         },
         {
             "title": "Overall Results",
             "url": "/results_tac/overallResults",
-            "query": "SELECT PositiveNumber, NegativeNumber, (PositiveNumber * 100.0) / TotalCount AS PositivePercentage, (NegativeNumber * 100.0) / TotalCount AS NegativePercentage FROM ( SELECT SUM(CASE WHEN Result = 'POS' THEN 1 ELSE 0 END) PositiveNumber, SUM(CASE WHEN Result = 'NEG' THEN 1 ELSE 0 END) NegativeNumber, COUNT(*) AS TotalCount FROM [dbo].[kemri_tac_results] ) A",
-            "filter": false
+            "file": "results_tac.overallResults.sql"
         },
         {
             "title": "Pathogens Identified",
             "url": "/results_tac/pathogensIdentified",
-            "query": "SELECT Sum(CASE WHEN Result = 'NEG' THEN 1 ELSE 0 END) AS NegativeNumber, Sum(CASE WHEN Target ='Plasmodium' THEN 1 ELSE 0 END) AS PlasmodiumNumber, Sum(CASE WHEN Target ='HIV-1' THEN 1 ELSE 0 END) AS HIV1Number, Sum(CASE WHEN Target ='Salmonella' THEN 1 ELSE 0 END) AS SalmonellaNumber, Sum(CASE WHEN Target ='Rickettsia' THEN 1 ELSE 0 END) AS RickettsiaNumber, Sum(CASE WHEN Target ='Dengue' THEN 1 ELSE 0 END) AS DengueNumber, Sum(CASE WHEN Target ='Brucella' THEN 1 ELSE 0 END) AS BrucellaNumber, Sum(CASE WHEN Target ='Chikungunya' THEN 1 ELSE 0 END) AS ChikungunyaNumber, Sum(CASE WHEN Target ='S. pneumoniae' THEN 1 ELSE 0 END) AS SPneumoniaeNumber, Sum(CASE WHEN Target ='Leishmania' THEN 1 ELSE 0 END) AS LeishmaniaNumber, Sum(CASE WHEN Target ='Bartonella' THEN 1 ELSE 0 END) AS BartonellaNumber, Sum(CASE WHEN Target ='Leptospira' THEN 1 ELSE 0 END) AS LeptospiraNumber, Sum(CASE WHEN Target ='C. burnetii' THEN 1 ELSE 0 END) AS CburnetiiNumber, Sum(CASE WHEN Target ='Rift Valley Fever' THEN 1 ELSE 0 END) AS RiftValleyFeverNumber, Sum(CASE WHEN Target ='B. pseudomallei' THEN 1 ELSE 0 END) AS BpseudomelleNumber, COUNT(*) AS TotalCount, (Sum(CASE WHEN Target ='Plasmodium' THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS PlasmodiumPercentage, (Sum(CASE WHEN Target ='HIV-1' THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS HIV1Percentage, (Sum(CASE WHEN Target ='Salmonella' THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS SalmonellaPercentage, (Sum(CASE WHEN Target ='Salmonella' THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS SalmonellaPercentage, (Sum(CASE WHEN Target ='Rickettsia' THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS RickettsiaPercentage, (Sum(CASE WHEN Target ='Dengue' THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS DenguePercentage, (Sum(CASE WHEN Target ='Brucella' THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS BrucellaPercentage, (Sum(CASE WHEN Target ='Chikungunya' THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS ChikungunyaPercentage, (Sum(CASE WHEN Target ='S. pneumoniae' THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS SPneumoniaePercentage, (Sum(CASE WHEN Target ='Leishmania' THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS LeishmaniaPercentage, (Sum(CASE WHEN Target ='Bartonella' THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS BartonellaPercentage, (Sum(CASE WHEN Target ='Leptospira' THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS LeptospiraPercentage, (Sum(CASE WHEN Target ='C. burnetii' THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS CburnetiiPercentage, (Sum(CASE WHEN Target ='Rift Valley Fever' THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS RiftValleyFeverPercentage, (Sum(CASE WHEN Target ='B. pseudomallei' THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS BPseudomalleiPercentage, (Sum(CASE WHEN Result = 'NEG' THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS NegativePercentage FROM [dbo].[kemri_tac_results]",
-            "filter": false
+            "file": "results_tac.pathogensIdentified.sql"
         },
         {
             "title": "Syndromes over time",
             "url": "/results_tac/syndromesOvertime",
-            "query": "SELECT WeekNumber, SUM(PlasmodiumNumber) AS PlasmodiumNumber, SUM(HIV1Number) AS HIV1Number, SUM(SalmonellaNumber) AS SalmonellaNumber, SUM(RickettsiaNumber) AS RickettsiaNumber, SUM(DengueNumber) AS DengueNumber, SUM(BrucellaNumber) AS BrucellaNumber, SUM(ChikungunyaNumber) AS ChikungunyaNumber, SUM(SPneumonieNumber) AS SPneumonieNumber, SUM(LeishmaniaNumber) AS LeishmaniaNumber, SUM(BartonellaNumber) AS BartonellaNumber, SUM(LeptospiraNumber) AS LeptospiraNumber, SUM(CburnetiiNumber) AS CburnetiiNumber, SUM(RiftValleyFeverNumber) AS RiftValleyFeverNumber, SUM(BpseudomelleNumber) AS BpseudomelleNumber, (SUM(PlasmodiumNumber) * 100.0) / NULLIF(SUM(TotalPerWeek), 0) AS PlasmodiumPercentage, (SUM(HIV1Number) * 100.0) / NULLIF(SUM(TotalPerWeek), 0) AS HIV1Percentage, (SUM(SalmonellaNumber) * 100.0) / NULLIF(SUM(TotalPerWeek), 0) AS SalmonellaPercentage, (SUM(RickettsiaNumber) * 100.0) / NULLIF(SUM(TotalPerWeek), 0) AS RickettsiaPercentage, (SUM(DengueNumber) * 100.0) / NULLIF(SUM(TotalPerWeek), 0) AS DenguePercentage, (SUM(BrucellaNumber) * 100.0) / NULLIF(SUM(TotalPerWeek), 0) AS BrucellaPercentage, (SUM(ChikungunyaNumber) * 100.0) / NULLIF(SUM(TotalPerWeek), 0) AS ChikungunyaPercentage, (SUM(SPneumonieNumber) * 100.0) / NULLIF(SUM(TotalPerWeek), 0) AS SPneumoniePercentage, (SUM(LeishmaniaNumber) * 100.0) / NULLIF(SUM(TotalPerWeek), 0) AS LeishmaniaPercentage, (SUM(BartonellaNumber) * 100.0) / NULLIF(SUM(TotalPerWeek), 0) AS BartonellaPercentage, (SUM(LeptospiraNumber) * 100.0) / NULLIF(SUM(TotalPerWeek), 0) AS LeptospiraPercentage, (SUM(CburnetiiNumber) * 100.0) / NULLIF(SUM(TotalPerWeek), 0) AS CburnetiiPercentage, (SUM(RiftValleyFeverNumber) * 100.0) / NULLIF(SUM(TotalPerWeek), 0) AS RiftValleyFeverPercentage, (SUM(BpseudomelleNumber) * 100.0) / NULLIF(SUM(TotalPerWeek), 0) AS BpseudomellePercentage FROM ( SELECT (SELECT WeekNumber FROM [dbo].[DimEpiweek] WHERE C.InterviewDate BETWEEN StartDate AND EndDate) AS WeekNumber, CASE WHEN Target ='Plasmodium' THEN 1 ELSE 0 END AS PlasmodiumNumber, CASE WHEN Target ='HIV-1' THEN 1 ELSE 0 END AS HIV1Number, CASE WHEN Target ='Salmonella' THEN 1 ELSE 0 END AS SalmonellaNumber, CASE WHEN Target ='Rickettsia' THEN 1 ELSE 0 END AS RickettsiaNumber, CASE WHEN Target ='Dengue' THEN 1 ELSE 0 END AS DengueNumber, CASE WHEN Target ='Brucella' THEN 1 ELSE 0 END AS BrucellaNumber, CASE WHEN Target ='Chikungunya' THEN 1 ELSE 0 END AS ChikungunyaNumber, CASE WHEN Target ='S. pneumoniae' THEN 1 ELSE 0 END AS SPneumonieNumber, CASE WHEN Target ='Leishmania' THEN 1 ELSE 0 END AS LeishmaniaNumber, CASE WHEN Target ='Bartonella' THEN 1 ELSE 0 END AS BartonellaNumber, CASE WHEN Target ='Leptospira' THEN 1 ELSE 0 END AS LeptospiraNumber, CASE WHEN Target ='C. burnetii' THEN 1 ELSE 0 END AS CburnetiiNumber, CASE WHEN Target ='Rift Valley Fever' THEN 1 ELSE 0 END AS RiftValleyFeverNumber, CASE WHEN Target ='B. pseudomallei' THEN 1 ELSE 0 END AS BpseudomelleNumber, CASE WHEN Target IN ('Plasmodium', 'HIV-1', 'Salmonella', 'Rickettsia', 'Dengue', 'Brucella', 'Chikungunya', 'S. pneumoniae', 'Leishmania', 'Bartonella', 'Leptospira', 'C. burnetii', 'Rift Valley Fever', 'B. pseudomallei') THEN 1 ELSE 0 END AS TotalPerWeek FROM [dbo].[kemri_tac_results] A INNER JOIN [dbo].[FactEnrollAndHouseholdInfo] C ON A.PIDNumber = C.PID ) A GROUP BY WeekNumber ORDER BY WeekNumber ASC;",
-            "filter": false
+            "file": "results_tac.syndromesOvertime.sql"
         }
     ]
 }
