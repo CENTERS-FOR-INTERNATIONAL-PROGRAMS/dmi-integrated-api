@@ -4,45 +4,22 @@ import Database from "../../db/database";
 import * as RoutesData from '../../data/mortality_ncov/routes.json';
 import { config } from "../../config/db.config";
 import { IDFilter } from "../../models/IDFilter.model";
+import { IDRoute } from "../../models/IDRoute.model";
+import * as fs from 'fs';
+import * as path from 'path';
 
 interface IMainRepository {
-    readData(url: string): Promise<any[]>;
+    readPostData(req: Request): Promise<any[]>;
 }
 
 class MainRepository implements IMainRepository {
     db = new Database(config.DB);
     private retrievedData: any;
 
-    async readData(url: string): Promise<any[]> {
-        let route_query: string = ``;
-        let route_found: boolean = false;
-
-        RoutesData.routes.forEach(seekRoute => {
-            if (seekRoute.url == url) {
-                route_found = true;
-                route_query = seekRoute.query;
-            }
-        });
-
-        if ((route_found) && (route_query != "")) {
-            this.retrievedData = await this.db.sequelize?.query<any[]>(route_query, {
-                type: QueryTypes.SELECT,
-            });
-        } else {
-            this.retrievedData = [{
-                "message": "Unhandled request --> " + url
-            }];
-        }
-
-        return this.retrievedData;
-    }
-
     async readPostData(req: Request): Promise<any[]> {
         let url = req.url;
-        let targetRoute: {} = {};
-        let route_query: string = ``;
+        let TargetRoute: IDRoute = new IDRoute("", "", "");
         let route_filter_query: string = ``;
-        let route_found: boolean = false;
         let filterInstance = new IDFilter(req.body);
 
         //#region Compile filters
@@ -87,25 +64,45 @@ class MainRepository implements IMainRepository {
         }
         //#endregion
 
-        RoutesData.routes.forEach(seekRoute => {
-            if (seekRoute.url == url) {
-                targetRoute = seekRoute;
-                route_found = true;
-                route_query = seekRoute.query;
-
-                if (seekRoute.filter) {
-                    route_query = route_query.replace("{{WHERE}}", route_filter_query);
-                }
+        //#region Seek target route
+        for (let i = 0; i < RoutesData.routes.length; i++) {
+            if (RoutesData.routes[i].url == url) {
+                TargetRoute = new IDRoute(
+                    RoutesData.routes[i].title,
+                    RoutesData.routes[i].url,
+                    RoutesData.routes[i].file);
+                break;
             }
-        });
+        }
+        //#endregion
 
-        if ((route_found) && (route_query != "")) {
-            this.retrievedData = await this.db.sequelize?.query<any[]>(route_query, {
+        //#region Read target query file
+        if (TargetRoute.file != "") {
+            TargetRoute.query = await this.readQuery(TargetRoute);
+        }
+        //#endregion
+
+        return await this.executeQuery(TargetRoute, route_filter_query);
+    }
+
+    async readQuery(RouteInstance: IDRoute) {
+        try {
+            return fs.readFileSync(path.join("build/src/data/mortality_ncov/queries/", RouteInstance.file), 'utf8');
+        } catch (error) {
+            return "File not found";
+        }
+    }
+
+    async executeQuery(RouteInstance: IDRoute, filter_query: string): Promise<any[]> {
+        if (RouteInstance.query != "") {
+            RouteInstance.query = RouteInstance.query.replace("--{{WHERE}}--", filter_query);
+
+            this.retrievedData = await this.db.sequelize?.query<any[]>(RouteInstance.query, {
                 type: QueryTypes.SELECT,
             });
         } else {
             this.retrievedData = [{
-                "message": "Unhandled request --> " + url
+                "message": "Unhandled request --> " + RouteInstance.url
             }];
         }
 
